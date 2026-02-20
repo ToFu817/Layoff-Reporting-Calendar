@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>資遣通報月曆｜稅務小豆腐</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --tofu-yellow: #FFF9E1;
+            --tofu-border: #E8D5B5;
+            --tofu-text: #5D4D37;
+            --tofu-accent: #D4A373;
+            --tofu-notice: #FFD966;
+            --tofu-last: #E06666;
+            --tofu-report: #7ED957;
+            --tofu-effect: #54A0FF;
+            --tofu-period: #FCE5CD;
+            --tofu-join: #D5B8FF;
+        }
+        body { 
+            background-color: #FEFDF7; 
+            color: var(--tofu-text);
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tofu-card {
+            background: white;
+            border: 2px solid var(--tofu-border);
+            border-radius: 16px;
+            box-shadow: 4px 4px 0px var(--tofu-border);
+            margin-bottom: 16px;
+        }
+        @media (min-width: 768px) {
+            .tofu-card { margin-bottom: 24px; }
+        }
+        .tofu-header {
+            background-color: var(--tofu-accent);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 8px;
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+        }
+        input {
+            background-color: #FFF;
+            border: 2px solid var(--tofu-border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            width: 100%;
+            color: var(--tofu-text);
+            outline: none;
+            font-weight: bold;
+            font-size: 16px; /* 防止 iOS 輸入時自動放大 */
+        }
+        .label-text { font-weight: bold; font-size: 0.9rem; margin-bottom: 6px; display: block; }
+        
+        .hunt-bar {
+            border-left: 4px solid var(--tofu-accent);
+            background: #FFF;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        @media (min-width: 640px) {
+            .hunt-bar { flex-direction: row; justify-content: space-between; align-items: center; }
+        }
+        .hunt-date { font-weight: bold; color: #8B5E3C; }
+        .hunt-badge { background: #FCE5CD; color: #D4A373; padding: 2px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: bold; width: fit-content; }
+
+        .calendar-wrapper {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 2px solid var(--tofu-border);
+            border-radius: 12px;
+            padding: 8px;
+            background: #FDFBFA;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: var(--tofu-border);
+            border: 1px solid var(--tofu-border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .calendar-day {
+            background-color: white;
+            min-height: 60px;
+            padding: 4px;
+            font-size: 0.9rem; 
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        @media (min-width: 768px) {
+            .calendar-day { min-height: 80px; padding: 6px; font-size: 1.1rem; }
+        }
+        .calendar-header {
+            background-color: #F8F4ED;
+            text-align: center;
+            font-weight: bold;
+            padding: 6px 0;
+            font-size: 0.75rem;
+        }
+        @media (min-width: 768px) {
+            .calendar-header { padding: 8px 0; font-size: 0.9rem; }
+        }
+        .tag { font-size: 8px; font-weight: bold; padding: 1px 3px; border-radius: 4px; margin-top: 2px; display: block; width: fit-content; line-height: 1.2; white-space: nowrap; text-overflow: ellipsis; }
+        @media (min-width: 768px) {
+            .tag { font-size: 10px; padding: 2px 4px; }
+        }
+        .day-period { background-color: var(--tofu-period) !important; }
+        .highlight-box { border: 2px solid #E06666; background-color: #FFF5F5; }
+        
+        /* 自定義捲軸 */
+        .calendar-wrapper::-webkit-scrollbar { width: 6px; }
+        .calendar-wrapper::-webkit-scrollbar-track { background: transparent; }
+        .calendar-wrapper::-webkit-scrollbar-thumb { background: var(--tofu-border); border-radius: 10px; }
+    </style>
+</head>
+<body class="p-3 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-6 md:mb-10">
+            <h1 class="text-3xl md:text-4xl font-black tracking-wider" style="color: #8B5E3C;">資遣通報月曆</h1>
+            <p class="text-sm md:text-md opacity-70 mt-2 font-bold">根據勞動部函釋製作｜稅務小豆腐</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
+            <!-- 左側輸入 -->
+            <div class="lg:col-span-4 space-y-4">
+                <div class="tofu-card p-5 md:p-6">
+                    <div class="tofu-header">基本資料</div>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <span class="label-text">員工到職日</span>
+                            <input type="date" id="joinDate" onchange="calculate()">
+                        </div>
+                        <div>
+                            <span class="label-text">雇主通知勞工資遣日</span>
+                            <input type="date" id="notifyDate" onchange="calculate()">
+                        </div>
+                        <div>
+                            <span class="label-text">勞工最後在職日 (退保日)</span>
+                            <input type="date" id="lastDate" onchange="calculate()">
+                        </div>
+                        <div class="divider border-t-2 border-dashed border-orange-100 my-2"></div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                            <div>
+                                <span class="label-text">離職前6個月工資總額(未滿6個月請輸入在職期間工資)</span>
+                                <input type="number" id="totalSalary" placeholder="請輸入金額" oninput="calculate()">
+                            </div>
+                            <div>
+                                <span class="label-text">最近一個月正常應領工資</span>
+                                <input type="number" id="lastMonthSalary" placeholder="請輸入金額" oninput="calculate()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 規範說明卡片 -->
+                <div class="tofu-card p-5 md:p-6 bg-amber-50 border-amber-200">
+                    <p class="font-bold text-sm mb-4 text-amber-800 border-b border-amber-200 pb-2">📌 員工權益與資遣通報規範</p>
+                    
+                    <div class="space-y-4 text-xs text-amber-900 leading-relaxed">
+                        <div>
+                            <span class="bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-bold">預告工資</span>
+                            <ul class="list-disc ml-4 mt-1 space-y-1 opacity-90">
+                                <li>3個月~1年：<b>10日前</b>預告</li>
+                                <li>1年~3年：<b>20日前</b>預告</li>
+                                <li>3年以上：<b>30日前</b>預告</li>
+                                <li class="text-red-600 font-bold">未依法預告者，應給付不足天數的預告期工資。</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <span class="bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-bold">謀職假</span>
+                            <p class="mt-1 ml-1">預告期間內，<b>每 7 天可請 2 天</b>有薪謀職假。</p>
+                        </div>
+
+                        <div>
+                            <span class="bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-bold">資遣通報</span>
+                            <p class="mt-1 ml-1">一律須於<b>離職日 10 日前</b>完成通報。<br>
+                            <span class="opacity-70">(天災等不可抗力除外，罰鍰3-15萬)</span></p>
+                            <a href="https://www.gov.tw/News_Content_2_379829" target="_blank" class="mt-2 block text-center border border-amber-600 text-amber-700 py-1.5 rounded-lg hover:bg-amber-100 transition font-bold">🔗 線上資遣通報</a>
+                        </div>
+
+                        <hr class="border-amber-200">
+
+                        <div class="grid grid-cols-2 lg:grid-cols-1 gap-2">
+                            <a href="https://calcr2.mol.gov.tw/SeverancePay" target="_blank" class="flex items-center justify-center gap-1 bg-amber-600 text-white py-2 rounded-lg font-bold hover:bg-amber-700 transition text-center px-1">
+                                <span>資遣費試算表</span>
+                            </a>
+                            <a href="https://www.bli.gov.tw/0104213.html" target="_blank" class="flex items-center justify-center gap-1 bg-white border-2 border-amber-600 text-amber-700 py-2 rounded-lg font-bold hover:bg-amber-50 transition text-center px-1">
+                                <span>離職證明書</span>
+                            </a>
+                        </div>
+                        <p class="text-[10px] opacity-60 italic text-center">※ 如需申請失業給付，請務必開立證明</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側結果 -->
+            <div class="lg:col-span-8 space-y-4">
+                <div id="results" class="hidden">
+                    
+                    <!-- 補償工資結果區 -->
+                    <div class="tofu-card p-5 md:p-6 highlight-box">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <div>
+                                <p class="text-xs font-bold text-red-500 mb-1">⚖️ 預告天數不足的預告工資：</p>
+                                <p id="res_finalTotal" class="text-3xl md:text-4xl font-black text-red-600">NT$ 0</p>
+                            </div>
+                            <div class="sm:text-right">
+                                <p id="res_calcInfo" class="text-sm font-bold text-gray-700"></p>
+                                <p id="res_calcDetail" class="text-[11px] text-gray-400 mt-1"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 摘要卡片 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="tofu-card p-4 border-l-4 border-l-orange-500">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">月平均工資 (計算資遣費基準)</p>
+                            <div class="flex justify-between items-end mt-1">
+                                <span id="res_avgMonthly" class="text-xl font-black text-orange-700">--</span>
+                                <span id="res_avgDaily" class="text-xs font-bold text-orange-500 mb-1">--</span>
+                            </div>
+                            <p id="res_periodInfo" class="text-[10px] text-gray-400 mt-1 italic"></p>
+                            <p id="res_daysInfo" class="text-[9px] text-gray-300 mt-0.5 font-bold"></p>
+                        </div>
+                        <div class="tofu-card p-4 border-l-4 border-l-green-500">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">最晚資遣通報日</p>
+                            <p id="res_reportDate" class="text-xl font-black text-green-700">--</p>
+                            <p id="res_effectDate" class="text-xs font-bold text-blue-600 mt-1">離職生效日：--</p>
+                        </div>
+                    </div>
+
+                    <!-- 月曆 -->
+                    <div class="tofu-card p-5 md:p-6">
+                        <div class="tofu-header">時序月曆</div>
+                        <div id="calendarScrollWrapper" class="calendar-wrapper">
+                            <div id="calendarContainer"></div>
+                        </div>
+                        <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70">
+                                <span class="w-3 h-3 bg-yellow-400 rounded"></span> 通知勞工資遣日
+                            </div>
+                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70">
+                                <span class="w-3 h-3 bg-green-500 rounded"></span> 最後資遣通報日
+                            </div>
+                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70">
+                                <span class="w-3 h-3 bg-red-500 rounded"></span> 最後在職日 (退保日)
+                            </div>
+                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70">
+                                <span class="w-3 h-3 bg-blue-500 rounded"></span> 離職生效日
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 謀職假 -->
+                    <div class="tofu-card p-5 md:p-6">
+                        <div class="tofu-header">有薪謀職假區間</div>
+                        <div id="jobHuntBars" class="space-y-2 mt-2"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculate() {
+            const joinVal = document.getElementById('joinDate').value;
+            const notifyVal = document.getElementById('notifyDate').value;
+            const lastVal = document.getElementById('lastDate').value;
+            const totalSalary = parseFloat(document.getElementById('totalSalary').value) || 0;
+            const lastMonthSalary = parseFloat(document.getElementById('lastMonthSalary').value) || 0;
+
+            if (!joinVal || !lastVal) return;
+            document.getElementById('results').classList.remove('hidden');
+
+            const joinDate = new Date(joinVal);
+            const lastDate = new Date(lastVal);
+            const notifyDate = notifyVal ? new Date(notifyVal) : null;
+            
+            const effectDate = new Date(lastDate);
+            effectDate.setDate(lastDate.getDate() + 1);
+            document.getElementById('res_effectDate').innerText = `離職生效日：${formatDate(effectDate)}`;
+
+            const reportDateRaw = new Date(effectDate);
+            reportDateRaw.setDate(effectDate.getDate() - 9);
+            const finalReportResult = getAdjustedReportDate(reportDateRaw);
+            document.getElementById('res_reportDate').innerText = formatDate(finalReportResult.date);
+
+            const calcEnd = new Date(lastDate);
+            calcEnd.setDate(lastDate.getDate() - 1);
+
+            let calcStart = new Date(calcEnd);
+            calcStart.setMonth(calcEnd.getMonth() - 6);
+            calcStart.setDate(calcStart.getDate() + 1); 
+            if (calcStart < joinDate) calcStart = new Date(joinDate);
+
+            const totalDays = Math.ceil((calcEnd - calcStart) / (1000 * 60 * 60 * 24)) + 1;
+            const dailyAvg = Math.ceil(totalSalary / totalDays);
+
+            let monthCount = 0;
+            let sumDaysInMonths = 0;
+            let currentMonth = new Date(calcStart.getFullYear(), calcStart.getMonth(), 1);
+            
+            while (currentMonth <= calcEnd) {
+                const daysInThisMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+                sumDaysInMonths += daysInThisMonth;
+                monthCount++;
+                currentMonth.setMonth(currentMonth.getMonth() + 1);
+            }
+
+            const avgDaysPerMonth = sumDaysInMonths / monthCount;
+            const monthlyAvg = Math.ceil(dailyAvg * avgDaysPerMonth);
+
+            document.getElementById('res_avgMonthly').innerText = `NT$ ${monthlyAvg.toLocaleString()}`;
+            document.getElementById('res_avgDaily').innerText = `日平均: ${dailyAvg.toLocaleString()}`;
+            document.getElementById('res_periodInfo').innerText = `期間：${formatDateOnly(calcStart)}~${formatDateOnly(calcEnd)} (共 ${totalDays} 日)`;
+            document.getElementById('res_daysInfo').innerText = `平均月日數：${avgDaysPerMonth.toFixed(2)} 天`;
+
+            const recentMonthDaily = Math.ceil(lastMonthSalary / 30);
+            const calcDailyBase = Math.max(recentMonthDaily, dailyAvg);
+            const isUsingRecentMonth = recentMonthDaily > dailyAvg;
+
+            const seniority = getSeniority(joinDate, lastDate);
+            let legalNoticeDays = 0;
+            if (seniority.totalMonths >= 3 && seniority.totalMonths < 12) legalNoticeDays = 10;
+            else if (seniority.totalMonths >= 12 && seniority.totalMonths < 36) legalNoticeDays = 20;
+            else if (seniority.totalMonths >= 36) legalNoticeDays = 30;
+
+            let actualNoticeDays = notifyDate ? Math.max(0, Math.ceil((lastDate - notifyDate) / (1000*60*60*24))) : 0;
+            const shortDays = Math.max(0, legalNoticeDays - actualNoticeDays);
+            
+            const finalPay = shortDays * calcDailyBase;
+
+            document.getElementById('res_finalTotal').innerText = `NT$ ${finalPay.toLocaleString()}`;
+            document.getElementById('res_calcInfo').innerText = shortDays > 0 ? `不足 ${shortDays} 天 × 擇優日薪 ${calcDailyBase.toLocaleString()} 元` : "預告天數充足";
+            document.getElementById('res_calcDetail').innerText = isUsingRecentMonth ? "(採用「最近月薪/30」作為基準)" : "(採用「日平均工資」作為基準)";
+
+            const jobHuntBarsContainer = document.getElementById('jobHuntBars');
+            jobHuntBarsContainer.innerHTML = '';
+            if (notifyDate) {
+                let tempStart = new Date(notifyDate);
+                tempStart.setDate(notifyDate.getDate() + 1);
+                while (tempStart <= lastDate) {
+                    let tempEnd = new Date(tempStart);
+                    tempEnd.setDate(tempStart.getDate() + 6);
+                    if (tempEnd > lastDate) tempEnd = new Date(lastDate);
+                    const bar = document.createElement('div');
+                    bar.className = 'hunt-bar';
+                    bar.innerHTML = `<div class="hunt-date">${formatDate(tempStart)} ~ ${formatDate(tempEnd)}</div><div class="hunt-badge">可請 2 天有薪假</div>`;
+                    jobHuntBarsContainer.appendChild(bar);
+                    tempStart.setDate(tempStart.getDate() + 7);
+                }
+            } else {
+                jobHuntBarsContainer.innerHTML = '<p class="text-xs text-gray-400">請輸入「通知資遣日」以產出謀職假區間。</p>';
+            }
+
+            renderFullCalendar(joinDate, effectDate, notifyDate, lastDate, finalReportResult.date);
+        }
+
+        function getSeniority(start, end) {
+            let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+            if (end.getDate() < start.getDate()) months--;
+            return { totalMonths: months };
+        }
+
+        function getAdjustedReportDate(date) {
+            let d = new Date(date);
+            if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+            else if (d.getDay() === 6) d.setDate(d.getDate() + 2);
+            return { date: d };
+        }
+
+        function renderFullCalendar(start, effect, notify, last, report) {
+            const container = document.getElementById('calendarContainer');
+            container.innerHTML = '';
+            let iterDate = new Date(last.getFullYear(), last.getMonth() - 1, 1);
+            const finalIterDate = new Date(effect.getFullYear(), effect.getMonth(), 1);
+
+            while (iterDate <= finalIterDate) {
+                const monthTitle = document.createElement('div');
+                monthTitle.className = 'font-black text-brown-600 mb-2 mt-4 text-sm md:text-lg border-b-2 border-orange-100 pb-1';
+                monthTitle.innerText = `${iterDate.getFullYear()} 年 ${iterDate.getMonth() + 1} 月`;
+                container.appendChild(monthTitle);
+
+                const grid = document.createElement('div');
+                grid.className = 'calendar-grid';
+                ['日','一','二','三','四','五','六'].forEach(d => {
+                    const h = document.createElement('div');
+                    h.className = 'calendar-header';
+                    h.innerText = d;
+                    grid.appendChild(h);
+                });
+
+                const offset = iterDate.getDay();
+                const days = new Date(iterDate.getFullYear(), iterDate.getMonth() + 1, 0).getDate();
+
+                for (let i = 0; i < offset; i++) {
+                    const e = document.createElement('div');
+                    e.className = 'calendar-day bg-gray-50';
+                    grid.appendChild(e);
+                }
+
+                for (let d = 1; d <= days; d++) {
+                    const curr = new Date(iterDate.getFullYear(), iterDate.getMonth(), d);
+                    const cell = document.createElement('div');
+                    cell.className = 'calendar-day';
+                    cell.innerHTML = `<span>${d}</span>`;
+
+                    if (isSameDay(curr, start)) cell.innerHTML += `<span class="tag bg-purple-500 text-white">到職</span>`;
+                    if (notify && isSameDay(curr, notify)) cell.innerHTML += `<span class="tag bg-yellow-400 text-brown-800">通知</span>`;
+                    if (isSameDay(curr, report)) cell.innerHTML += `<span class="tag bg-green-500 text-white">通報</span>`;
+                    if (isSameDay(curr, last)) cell.innerHTML += `<span class="tag bg-red-500 text-white">最後</span>`;
+                    if (isSameDay(curr, effect)) cell.innerHTML += `<span class="tag bg-blue-500 text-white">生效</span>`;
+                    if (notify && curr > notify && curr < last) cell.classList.add('day-period');
+
+                    grid.appendChild(cell);
+                }
+                container.appendChild(grid);
+                iterDate.setMonth(iterDate.getMonth() + 1);
+            }
+            const wrapper = document.getElementById('calendarScrollWrapper');
+            // 平滑捲動至底部 (最新月份)
+            setTimeout(() => {
+                wrapper.scrollTo({ top: wrapper.scrollHeight, behavior: 'smooth' });
+            }, 100);
+        }
+
+        function isSameDay(d1, d2) {
+            return d1 && d2 && d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+        }
+
+        function formatDate(date) {
+            return `${date.getMonth() + 1}/${date.getDate()}(${['日','一','二','三','四','五','六'][date.getDay()]})`;
+        }
+
+        function formatDateOnly(date) {
+            return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+        }
+    </script>
+</body>
+</html>
