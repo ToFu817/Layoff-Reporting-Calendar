@@ -44,7 +44,7 @@
             margin-bottom: 12px;
             font-size: 0.85rem;
         }
-        input {
+        input, select {
             background-color: #FFF;
             border: 2px solid var(--tofu-border);
             border-radius: 10px;
@@ -53,7 +53,7 @@
             color: var(--tofu-text);
             outline: none;
             font-weight: bold;
-            font-size: 16px; /* 防止 iOS 輸入時自動放大 */
+            font-size: 16px;
         }
         .label-text { font-weight: bold; font-size: 0.9rem; margin-bottom: 6px; display: block; }
         
@@ -141,27 +141,46 @@
                 <div class="tofu-card p-5 md:p-6">
                     <div class="tofu-header">基本資料</div>
                     <div class="grid grid-cols-1 gap-4">
-                        <div>
-                            <span class="label-text">員工到職日</span>
-                            <input type="date" id="joinDate" onchange="calculate()">
-                        </div>
-                        <div>
-                            <span class="label-text">雇主通知勞工資遣日</span>
-                            <input type="date" id="notifyDate" onchange="calculate()">
-                        </div>
-                        <div>
-                            <span class="label-text">勞工最後在職日 (退保日)</span>
-                            <input type="date" id="lastDate" onchange="calculate()">
-                        </div>
-                        <div class="divider border-t-2 border-dashed border-orange-100 my-2"></div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                        <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <span class="label-text">離職前6個月工資總額(未滿6個月請輸入在職期間工資)</span>
-                                <input type="number" id="totalSalary" placeholder="請輸入金額" oninput="calculate()">
+                                <span class="label-text">薪資類型</span>
+                                <select id="salaryType" onchange="toggleSalaryInputs(); calculate();">
+                                    <option value="monthly">月薪制</option>
+                                    <option value="hourly">時薪/日薪制</option>
+                                </select>
                             </div>
                             <div>
+                                <span class="label-text">員工到職日</span>
+                                <input type="date" id="joinDate" onchange="calculate()">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <span class="label-text">雇主通知資遣日</span>
+                                <input type="date" id="notifyDate" onchange="calculate()">
+                            </div>
+                            <div>
+                                <span class="label-text">最後在職日</span>
+                                <input type="date" id="lastDate" onchange="calculate()">
+                            </div>
+                        </div>
+                        
+                        <div class="divider border-t-2 border-dashed border-orange-100 my-2"></div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <span class="label-text">離職前6個月工資總額</span>
+                                <input type="number" id="totalSalary" placeholder="計算平均工資用" oninput="calculate()">
+                            </div>
+                            
+                            <div id="monthlyOnlyInputs">
                                 <span class="label-text">最近一個月正常應領工資</span>
-                                <input type="number" id="lastMonthSalary" placeholder="請輸入金額" oninput="calculate()">
+                                <input type="number" id="lastMonthSalary" placeholder="月薪制計算預告工資基準" oninput="calculate()">
+                            </div>
+
+                            <div id="hourlyOnlyInputs" class="hidden">
+                                <span class="label-text">契約終止前一日之工資</span>
+                                <input type="number" id="lastDaySalary" placeholder="時薪/日薪預告工資基準" oninput="calculate()">
                             </div>
                         </div>
                     </div>
@@ -179,6 +198,9 @@
                                 <li>1年~3年：<b>20日前</b>預告</li>
                                 <li>3年以上：<b>30日前</b>預告</li>
                                 <li class="text-red-600 font-bold">未依法預告者，應給付不足天數的預告期工資。</li>
+                                <li class="bg-white p-1 rounded border border-amber-200 mt-2 text-[10px]">
+                                    <b>時薪/日薪計薪者：</b><br>預告工資標準為「預告日數 × 終止前一日之正常工作時間工資」。若其較平均工資擇優者，應從優給付。
+                                </li>
                             </ul>
                         </div>
 
@@ -204,7 +226,6 @@
                                 <span>離職證明書</span>
                             </a>
                         </div>
-                        <p class="text-[10px] opacity-60 italic text-center">※ 如需申請失業給付，請務必開立證明</p>
                     </div>
                 </div>
             </div>
@@ -236,7 +257,6 @@
                                 <span id="res_avgDaily" class="text-xs font-bold text-orange-500 mb-1">--</span>
                             </div>
                             <p id="res_periodInfo" class="text-[10px] text-gray-400 mt-1 italic"></p>
-                            <p id="res_daysInfo" class="text-[9px] text-gray-300 mt-0.5 font-bold"></p>
                         </div>
                         <div class="tofu-card p-4 border-l-4 border-l-green-500">
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">最晚資遣通報日</p>
@@ -252,18 +272,10 @@
                             <div id="calendarContainer"></div>
                         </div>
                         <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2">
-                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70">
-                                <span class="w-3 h-3 bg-yellow-400 rounded"></span> 通知勞工資遣日
-                            </div>
-                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70">
-                                <span class="w-3 h-3 bg-green-500 rounded"></span> 最後資遣通報日
-                            </div>
-                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70">
-                                <span class="w-3 h-3 bg-red-500 rounded"></span> 最後在職日 (退保日)
-                            </div>
-                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70">
-                                <span class="w-3 h-3 bg-blue-500 rounded"></span> 離職生效日
-                            </div>
+                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70"><span class="w-3 h-3 bg-yellow-400 rounded"></span> 通知勞工資遣日</div>
+                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70"><span class="w-3 h-3 bg-green-500 rounded"></span> 最後資遣通報日</div>
+                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70"><span class="w-3 h-3 bg-red-500 rounded"></span> 最後在職日</div>
+                            <div class="flex items-center gap-1 text-[10px] font-bold opacity-70"><span class="w-3 h-3 bg-blue-500 rounded"></span> 離職生效日</div>
                         </div>
                     </div>
 
@@ -279,12 +291,20 @@
     </div>
 
     <script>
+        function toggleSalaryInputs() {
+            const type = document.getElementById('salaryType').value;
+            document.getElementById('monthlyOnlyInputs').classList.toggle('hidden', type !== 'monthly');
+            document.getElementById('hourlyOnlyInputs').classList.toggle('hidden', type !== 'hourly');
+        }
+
         function calculate() {
+            const salaryType = document.getElementById('salaryType').value;
             const joinVal = document.getElementById('joinDate').value;
             const notifyVal = document.getElementById('notifyDate').value;
             const lastVal = document.getElementById('lastDate').value;
             const totalSalary = parseFloat(document.getElementById('totalSalary').value) || 0;
             const lastMonthSalary = parseFloat(document.getElementById('lastMonthSalary').value) || 0;
+            const lastDaySalary = parseFloat(document.getElementById('lastDaySalary').value) || 0;
 
             if (!joinVal || !lastVal) return;
             document.getElementById('results').classList.remove('hidden');
@@ -302,40 +322,33 @@
             const finalReportResult = getAdjustedReportDate(reportDateRaw);
             document.getElementById('res_reportDate').innerText = formatDate(finalReportResult.date);
 
+            // 平均工資計算
             const calcEnd = new Date(lastDate);
             calcEnd.setDate(lastDate.getDate() - 1);
-
             let calcStart = new Date(calcEnd);
             calcStart.setMonth(calcEnd.getMonth() - 6);
             calcStart.setDate(calcStart.getDate() + 1); 
             if (calcStart < joinDate) calcStart = new Date(joinDate);
-
             const totalDays = Math.ceil((calcEnd - calcStart) / (1000 * 60 * 60 * 24)) + 1;
             const dailyAvg = Math.ceil(totalSalary / totalDays);
 
             let monthCount = 0;
             let sumDaysInMonths = 0;
             let currentMonth = new Date(calcStart.getFullYear(), calcStart.getMonth(), 1);
-            
             while (currentMonth <= calcEnd) {
                 const daysInThisMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
                 sumDaysInMonths += daysInThisMonth;
                 monthCount++;
                 currentMonth.setMonth(currentMonth.getMonth() + 1);
             }
-
             const avgDaysPerMonth = sumDaysInMonths / monthCount;
             const monthlyAvg = Math.ceil(dailyAvg * avgDaysPerMonth);
 
             document.getElementById('res_avgMonthly').innerText = `NT$ ${monthlyAvg.toLocaleString()}`;
             document.getElementById('res_avgDaily').innerText = `日平均: ${dailyAvg.toLocaleString()}`;
             document.getElementById('res_periodInfo').innerText = `期間：${formatDateOnly(calcStart)}~${formatDateOnly(calcEnd)} (共 ${totalDays} 日)`;
-            document.getElementById('res_daysInfo').innerText = `平均月日數：${avgDaysPerMonth.toFixed(2)} 天`;
 
-            const recentMonthDaily = Math.ceil(lastMonthSalary / 30);
-            const calcDailyBase = Math.max(recentMonthDaily, dailyAvg);
-            const isUsingRecentMonth = recentMonthDaily > dailyAvg;
-
+            // 預告工資計算
             const seniority = getSeniority(joinDate, lastDate);
             let legalNoticeDays = 0;
             if (seniority.totalMonths >= 3 && seniority.totalMonths < 12) legalNoticeDays = 10;
@@ -344,13 +357,26 @@
 
             let actualNoticeDays = notifyDate ? Math.max(0, Math.ceil((lastDate - notifyDate) / (1000*60*60*24))) : 0;
             const shortDays = Math.max(0, legalNoticeDays - actualNoticeDays);
+
+            let calcDailyBase = 0;
+            let detailText = "";
+            
+            if (salaryType === 'monthly') {
+                const recentMonthDaily = Math.ceil(lastMonthSalary / 30);
+                calcDailyBase = Math.max(recentMonthDaily, dailyAvg);
+                detailText = recentMonthDaily > dailyAvg ? "(採用「最近月薪/30」作為基準)" : "(採用「平均日工資」作為基準)";
+            } else {
+                // 時薪/日薪制：擇優 (契約終止前一日工資 vs 平均工資)
+                calcDailyBase = Math.max(lastDaySalary, dailyAvg);
+                detailText = lastDaySalary > dailyAvg ? "(採用「終止前一日工資」作為基準)" : "(採用「平均日工資」作為基準)";
+            }
             
             const finalPay = shortDays * calcDailyBase;
-
             document.getElementById('res_finalTotal').innerText = `NT$ ${finalPay.toLocaleString()}`;
             document.getElementById('res_calcInfo').innerText = shortDays > 0 ? `不足 ${shortDays} 天 × 擇優日薪 ${calcDailyBase.toLocaleString()} 元` : "預告天數充足";
-            document.getElementById('res_calcDetail').innerText = isUsingRecentMonth ? "(採用「最近月薪/30」作為基準)" : "(採用「日平均工資」作為基準)";
+            document.getElementById('res_calcDetail').innerText = detailText;
 
+            // 謀職假
             const jobHuntBarsContainer = document.getElementById('jobHuntBars');
             jobHuntBarsContainer.innerHTML = '';
             if (notifyDate) {
@@ -435,7 +461,6 @@
                 iterDate.setMonth(iterDate.getMonth() + 1);
             }
             const wrapper = document.getElementById('calendarScrollWrapper');
-            // 平滑捲動至底部 (最新月份)
             setTimeout(() => {
                 wrapper.scrollTo({ top: wrapper.scrollHeight, behavior: 'smooth' });
             }, 100);
